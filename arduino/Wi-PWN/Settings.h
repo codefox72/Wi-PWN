@@ -60,6 +60,7 @@ extern NameList nameList;
 #define passwordClientAdr 1227
 #define hostnameLenAdr 1259
 #define hostnameAdr 1260
+#define savedSSIDAdr   1300
 
 #define checkNumAdr 3000
 #define checkNum 16
@@ -75,6 +76,8 @@ class Settings
     void sendSysInfo();
     void info();
 
+    void save_ssids ();
+    void load_ssids ();
     int ssidLen;
     String ssid = "";
     bool ssidHidden;
@@ -124,6 +127,9 @@ class Settings
     bool pinStateOff = true;  // When attack is off, pin state is HIGH
     unsigned long deauthpackets = 0;
     unsigned long beaconpackets = 0;
+
+    int savedSSIDCnt;
+    String savedSSID[48];
 
   private:
     size_t getSize();

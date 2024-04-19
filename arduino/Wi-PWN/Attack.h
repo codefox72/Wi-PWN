@@ -47,7 +47,7 @@ class Attack
     size_t getSize();
     void refreshLed();
     void changeRandom(int num);
-
+    bool attack_running (int num) { return isRunning[num]; }
     bool ssidChange = true;
   private:
 

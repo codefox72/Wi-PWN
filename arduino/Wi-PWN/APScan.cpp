@@ -1,7 +1,9 @@
 #include "APScan.h"
 
-APScan::APScan() {
+//#define AUTO_SELECT_NAME "TPGuest_C0ED"
+//#define AUTO_SELECT_NAME "memenetHW_2.4"
 
+APScan::APScan() {
 }
 
 bool APScan::start() {
@@ -10,6 +12,7 @@ bool APScan::start() {
     Serial.println("MAC - Ch - RSSI - Encrypt. - SSID - Hidden");// - Vendor");
   }
   aps._clear();
+  selectedSum = 0;
   results = 0;
   for (int i = 0; i < maxAPScanResults; i++){
     selected[i] = false;
@@ -31,6 +34,13 @@ bool APScan::start() {
     String _ssid = WiFi.SSID(i);
     _ssid.toCharArray(names[i], 33);
     //data_getVendor(WiFi.BSSID(i)[0],WiFi.BSSID(i)[1],WiFi.BSSID(i)[2]).toCharArray(vendors[i],9);
+    for (int j = 0; j < settings.savedSSIDCnt; j++) {
+      if (settings.savedSSID[j] == _ssid) {
+        selected[i] = true;
+        selectedSum++;
+        break;
+      }
+    }
     if (debug) {
       Serial.print((String)i);
       Serial.print(" - ");

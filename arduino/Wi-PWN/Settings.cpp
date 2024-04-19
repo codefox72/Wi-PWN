@@ -41,6 +41,22 @@ void Settings::setLedPin(int newLedPin){
   }
 }
 
+void Settings::load_ssids ()
+{
+  int adr = savedSSIDAdr;
+  int len = 0;
+
+  savedSSIDCnt = 0;
+  while (1) {
+    len = EEPROM.read (adr++);
+    if (0 == len || len > 32) break;
+    savedSSID[savedSSIDCnt] = "";
+    for (int i = 0; i < len; i++)
+      savedSSID[savedSSIDCnt] += (char) EEPROM.read (adr++);
+    savedSSIDCnt++;
+  }
+}
+
 void Settings::load() {
   if (EEPROM.read(checkNumAdr) != 0 && EEPROM.read(checkNumAdr) != checkNum) {
     Serial.println("");
@@ -114,6 +130,7 @@ void Settings::load() {
   pinNamesLen = EEPROM.read(pinNamesLenAdr);
   pinNames = "";
   for (int i = 0; i < pinNamesLen; i++) pinNames += (char)EEPROM.read(pinNamesAdr + i);
+  load_ssids ();
 }
 
 void Settings::reset() {
@@ -157,9 +174,23 @@ void Settings::reset() {
   detectorScanTime = 200;
   pins = "000000";
   pinNames = "Pin 3;Pin 4;Pin 5;Pin 6;Pin 7;Pin 8"; 
+  savedSSIDCnt = 0;
   if (debug) Serial.println("Reset complete!");
 
   save();
+  save_ssids ();
+}
+
+void Settings::save_ssids ()
+{
+  int adr = savedSSIDAdr;
+  for (int i = 0; i < savedSSIDCnt; i++) {
+    EEPROM.write (adr++, savedSSID[i].length());
+    for (int j = 0; j < savedSSID[i].length (); j++)
+      EEPROM.write (adr++, savedSSID[i].charAt (j));
+  }
+  EEPROM.write (adr, 0);
+  EEPROM.commit();
 }
 
 void Settings::save() {
@@ -220,7 +251,7 @@ void Settings::save() {
   EEPROM.write(pinNamesLenAdr, pinNamesLen);
   for (int i = 0; i < pinNamesLen; i++) EEPROM.write(pinNamesAdr + i, pinNames[i]);
   EEPROM.commit();
-
+  save_ssids ();
   /*int i=0;
   int pinNumber = 3;
   Serial.println("START");
@@ -255,6 +286,10 @@ void Settings::info() {
   Serial.println("  Deauth Detector : all-channels='" + (String)detectorAllChannels + "'\t\t|  channel='" + (String)detectorChannel + "'\t\t\t|  alert-pin='" + (String)alertPin + "'\t|  invert-pin='" + (String)invertAlertPin + "'\t|  scan-time='" + (String)detectorScanTime + "'");
   Serial.println("  Other           : channel-hopping='" + (String)channelHop + "'\t\t|  multiple-aps='" + (String)multiAPs + "'\t\t|  multiple-attacks='" + (String)multiAttacks + "'");
   Serial.println("  PIN Control     : state='" + (String)pins + "'\t\t|  names='" + (String)pinNames + "'");
+  Serial.print  ("  Saved SSIDs     : cnt=" + String (savedSSIDCnt) + "\t\t| ");
+  for (int i = 0; i < savedSSIDCnt; i++)
+    Serial.print ("" + savedSSID[i] + ",\t");
+  Serial.println ("");
   Serial.println("");
 }
 
